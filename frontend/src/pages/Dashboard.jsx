@@ -1,0 +1,123 @@
+import { useState, useEffect } from "react";
+import { api } from "../api/client";
+import Card from "../components/ui/Card";
+import DataTable from "../components/ui/DataTable";
+
+export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({
+    totalProperties: 0,
+    occupancyRate: 0,
+    collectedRent: 0,
+    openTickets: 0,
+  });
+  const [rentData, setRentData] = useState([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [occupancy, rent, maintenance] = await Promise.all([
+          api.getOccupancyReport(),
+          api.getRentCollection(),
+          api.getMaintenancePerformance()
+        ]);
+
+        // Aggregate metrics
+        const totalProps = occupancy.length;
+        
+        let totalUnits = 0;
+        let occupiedUnits = 0;
+        occupancy.forEach(p => {
+          totalUnits += p.total_units;
+          occupiedUnits += p.occupied_units;
+        });
+        const occRate = totalUnits > 0 ? ((occupiedUnits / totalUnits) * 100).toFixed(1) : 0;
+
+        let totalCollected = 0;
+        rent.forEach(p => {
+          totalCollected += p.collected_rent;
+        });
+
+        let totalOpenTickets = 0;
+        maintenance.forEach(p => {
+          totalOpenTickets += p.open_requests;
+        });
+
+        setMetrics({
+          totalProperties: totalProps,
+          occupancyRate: occRate,
+          collectedRent: totalCollected,
+          openTickets: totalOpenTickets
+        });
+        
+        setRentData(rent);
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard data", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+
+  const rentColumns = [
+    { header: "Property", accessor: "property_name" },
+    { header: "Expected", render: (row) => formatCurrency(row.expected_rent), align: "right" },
+    { header: "Collected", render: (row) => formatCurrency(row.collected_rent), align: "right" },
+    { header: "Outstanding", render: (row) => (
+      <span className={row.outstanding_amount > 0 ? "text-amber-600 font-medium" : "text-emerald-600 font-medium"}>
+        {formatCurrency(row.outstanding_amount)}
+      </span>
+    ), align: "right" },
+    { header: "Collection %", render: (row) => `${row.collection_percentage}%`, align: "right" }
+  ];
+
+  if (loading) {
+    return <div className="text-[var(--color-taupe-txt)]">Loading dashboard...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <h3 className="text-sm font-medium text-[var(--color-taupe-txt)]">Total Properties</h3>
+          <p className="text-3xl font-bold mt-2 text-[var(--color-charcoal-txt)]">{metrics.totalProperties}</p>
+        </Card>
+        <Card>
+          <h3 className="text-sm font-medium text-[var(--color-taupe-txt)]">Avg Occupancy Rate</h3>
+          <p className="text-3xl font-bold mt-2 text-[var(--color-charcoal-txt)]">{metrics.occupancyRate}%</p>
+        </Card>
+        <Card>
+          <h3 className="text-sm font-medium text-[var(--color-taupe-txt)]">MTD Collected Rent</h3>
+          <p className="text-3xl font-bold mt-2 text-[var(--color-charcoal-txt)]">{formatCurrency(metrics.collectedRent)}</p>
+        </Card>
+        <Card>
+          <h3 className="text-sm font-medium text-[var(--color-taupe-txt)]">Open Maintenance</h3>
+          <p className="text-3xl font-bold mt-2 text-[var(--color-charcoal-txt)]">{metrics.openTickets}</p>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card title="Rent Collection by Property" subtitle="Month-to-date collection status">
+            <DataTable columns={rentColumns} data={rentData} />
+          </Card>
+        </div>
+        <div className="lg:col-span-1">
+          <Card title="Quick Actions">
+            <div className="space-y-3">
+              <button className="btn btn-primary w-full justify-start">Create Lease</button>
+              <button className="btn btn-secondary w-full justify-start">Log Payment</button>
+              <button className="btn btn-secondary w-full justify-start">New Maintenance Request</button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
