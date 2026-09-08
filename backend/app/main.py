@@ -12,6 +12,7 @@ from app.api.api import api_router
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi.responses import JSONResponse
 from fastapi import Request, status
+from fastapi.staticfiles import StaticFiles
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -42,6 +43,11 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
     )
 
 app.include_router(api_router, prefix="/api/v1")
+
+# Mount uploads directory to serve images statically
+import os
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/health", tags=["Health"])

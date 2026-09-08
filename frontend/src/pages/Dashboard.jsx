@@ -115,9 +115,9 @@ function AdminOwnerDashboard() {
         <div className="lg:col-span-1">
           <Card title="Quick Actions">
             <div className="space-y-3">
-              <button onClick={() => navigate('/tenants')} className="btn btn-primary w-full justify-start">Manage Tenants</button>
-              <button onClick={() => navigate('/payments')} className="btn btn-secondary w-full justify-start">Log Payment</button>
-              <button onClick={() => navigate('/maintenance')} className="btn btn-secondary w-full justify-start">Maintenance Requests</button>
+              <button onClick={() => navigate('/dashboard/tenants')} className="btn btn-primary w-full justify-start">Manage Tenants</button>
+              <button onClick={() => navigate('/dashboard/payments')} className="btn btn-secondary w-full justify-start">Log Payment</button>
+              <button onClick={() => navigate('/dashboard/maintenance')} className="btn btn-secondary w-full justify-start">Maintenance Requests</button>
             </div>
           </Card>
         </div>
@@ -199,9 +199,9 @@ function TenantDashboard() {
         <div className="lg:col-span-1">
           <Card title="Quick Actions">
             <div className="space-y-3">
-              <button onClick={() => navigate('/payments')} className="btn btn-primary w-full justify-start">Make a Payment</button>
-              <button onClick={() => navigate('/maintenance')} className="btn btn-secondary w-full justify-start">Request Maintenance</button>
-              <button onClick={() => navigate('/support')} className="btn btn-secondary w-full justify-start">Contact Support</button>
+              <button onClick={() => navigate('/dashboard/payments')} className="btn btn-primary w-full justify-start">Make a Payment</button>
+              <button onClick={() => navigate('/dashboard/maintenance')} className="btn btn-secondary w-full justify-start">Request Maintenance</button>
+              <button onClick={() => navigate('/dashboard/support')} className="btn btn-secondary w-full justify-start">Contact Support</button>
             </div>
           </Card>
         </div>

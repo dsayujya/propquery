@@ -21,6 +21,7 @@ class Property(Base):
     zip_code: Mapped[str] = mapped_column(String(20), nullable=False)
     property_type: Mapped[str] = mapped_column(String(50), nullable=False)
     year_built: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     owner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()

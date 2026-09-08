@@ -10,11 +10,14 @@ from .routes.maintenance import router as maintenance_router
 from .routes.support import router as support_router
 from .routes.reports import router as reports_router
 from .routes.auth import router as auth_router
+from .routes.listings import router as listings_router
+from .routes.upload import router as upload_router
 
 api_router = APIRouter()
 
-# Auth routes are public
+# Auth and Listings routes are public
 api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])
+api_router.include_router(listings_router, prefix="/listings", tags=["Listings"])
 
 # Secure all other routes
 secured = [Depends(get_current_user)]
@@ -27,3 +30,4 @@ api_router.include_router(payments_router, prefix="/payments", tags=["Payments"]
 api_router.include_router(maintenance_router, prefix="/maintenance", tags=["Maintenance"], dependencies=secured)
 api_router.include_router(support_router, prefix="/support", tags=["Support"], dependencies=secured)
 api_router.include_router(reports_router, prefix="/reports", tags=["Reports"], dependencies=secured)
+api_router.include_router(upload_router, prefix="/upload", tags=["Uploads"], dependencies=secured)

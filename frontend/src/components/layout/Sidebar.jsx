@@ -19,13 +19,13 @@ export default function Sidebar() {
   const role = user?.role || "tenant";
   
   const allNavItems = [
-    { name: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "owner", "tenant"] },
-    { name: "Properties", path: "/properties", icon: Building2, roles: ["admin", "owner"] },
-    { name: "Units & Tenants", path: "/tenants", icon: Users, roles: ["admin", "owner"] },
-    { name: "Payments", path: "/payments", icon: Receipt, roles: ["admin", "tenant"] },
-    { name: "Maintenance", path: "/maintenance", icon: Wrench, roles: ["admin", "owner", "tenant"] },
-    { name: "Support", path: "/support", icon: LifeBuoy, roles: ["admin", "tenant"] },
-    { name: "Reports", path: "/reports", icon: LineChart, roles: ["admin", "owner"] },
+    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, roles: ["admin", "owner", "tenant"] },
+    { name: "Properties", path: "/dashboard/properties", icon: Building2, roles: ["admin", "owner"] },
+    { name: "Units & Tenants", path: "/dashboard/tenants", icon: Users, roles: ["admin", "owner"] },
+    { name: "Payments", path: "/dashboard/payments", icon: Receipt, roles: ["admin", "tenant"] },
+    { name: "Maintenance", path: "/dashboard/maintenance", icon: Wrench, roles: ["admin", "owner", "tenant"] },
+    { name: "Support", path: "/dashboard/support", icon: LifeBuoy, roles: ["admin", "tenant"] },
+    { name: "Reports", path: "/dashboard/reports", icon: LineChart, roles: ["admin", "owner"] },
   ];
 
   const navItems = allNavItems.filter(item => item.roles.includes(role));

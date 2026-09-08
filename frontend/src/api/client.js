@@ -22,9 +22,21 @@ export const api = {
   getMaintenancePerformance: () => apiClient.get("/reports/maintenance-performance").then(res => res.data),
   getTenantPayments: () => apiClient.get("/reports/tenant-payments").then(res => res.data),
   
+  // Public Listings
+  getPublicListings: () => apiClient.get("/listings/").then(res => res.data),
+  getPublicListing: (id) => apiClient.get(`/listings/${id}`).then(res => res.data),
+  
   // Entities (basic)
   getProperties: () => apiClient.get("/properties/").then(res => res.data),
   createProperty: (data) => apiClient.post("/properties/", data).then(res => res.data),
+  
+  // Uploads
+  uploadImage: (formData) => apiClient.post("/upload/image", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  }).then(res => res.data),
+  
+  getUnits: () => apiClient.get("/units/").then(res => res.data),
+  createUnit: (data) => apiClient.post("/units/", data).then(res => res.data),
   
   getTenants: () => apiClient.get("/tenants/").then(res => res.data),
   createTenant: (data) => apiClient.post("/tenants/", data).then(res => res.data),
