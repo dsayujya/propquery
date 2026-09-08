@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Building2, Users, Receipt, Wrench, LifeBuoy, LineChart, LogOut } from "lucide-react";
+import { LayoutDashboard, Building2, Users, Receipt, Wrench, LifeBuoy, LineChart, LogOut, Compass } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar() {
@@ -19,6 +19,7 @@ export default function Sidebar() {
   const role = user?.role || "tenant";
   
   const allNavItems = [
+    { name: "Browse Listings", path: "/", icon: Compass, roles: ["admin", "owner", "tenant"] },
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, roles: ["admin", "owner", "tenant"] },
     { name: "Properties", path: "/dashboard/properties", icon: Building2, roles: ["admin", "owner"] },
     { name: "Units & Tenants", path: "/dashboard/tenants", icon: Users, roles: ["admin", "owner"] },
