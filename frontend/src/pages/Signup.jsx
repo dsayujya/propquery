@@ -3,13 +3,15 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
 
-export default function Login() {
+export default function Signup() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("tenant");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,21 +19,29 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await signup(email, password, fullName, role);
       navigate("/");
     } catch (err) {
-      setError("Invalid email or password.");
+      if (err.response && err.response.data && err.response.data.detail) {
+        if (typeof err.response.data.detail === 'string') {
+          setError(err.response.data.detail);
+        } else {
+          setError(JSON.stringify(err.response.data.detail));
+        }
+      } else {
+        setError("An error occurred during signup.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-beige-bg)] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-beige-bg)] px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-[var(--color-charcoal-txt)]">PropQuery</h1>
-          <p className="text-sm text-[var(--color-taupe-txt)] mt-2">Sign in to your account</p>
+          <p className="text-sm text-[var(--color-taupe-txt)] mt-2">Create a new account</p>
         </div>
 
         <Card>
@@ -41,16 +51,29 @@ export default function Login() {
                 {error}
               </div>
             )}
+            
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-charcoal-txt)] mb-1">Full Name</label>
+              <input 
+                type="text" 
+                required 
+                className="input w-full" 
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-[var(--color-charcoal-txt)] mb-1">Email</label>
               <input 
                 type="email" 
                 required 
-                className="input" 
+                className="input w-full" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+            
             <div>
               <label className="block text-sm font-medium text-[var(--color-charcoal-txt)] mb-1">Password</label>
               <div className="relative">
@@ -70,16 +93,31 @@ export default function Login() {
                 </button>
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-charcoal-txt)] mb-1">Role</label>
+              <select 
+                className="input w-full"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="tenant">Tenant</option>
+                <option value="owner">Property Owner</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
             <button 
               type="submit" 
               disabled={loading}
               className="btn btn-primary w-full mt-4 h-10"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
+
             <div className="mt-4 text-center text-sm pt-2">
-              <span className="text-[var(--color-taupe-txt)]">Don't have an account? </span>
-              <Link to="/signup" className="text-[var(--color-primary)] hover:underline font-medium">Create one</Link>
+              <span className="text-[var(--color-taupe-txt)]">Already have an account? </span>
+              <Link to="/login" className="text-[var(--color-primary)] hover:underline font-medium">Sign in</Link>
             </div>
           </form>
         </Card>

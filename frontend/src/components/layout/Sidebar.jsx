@@ -1,16 +1,34 @@
-import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Building2, Users, Receipt, Wrench, LifeBuoy, LineChart } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Building2, Users, Receipt, Wrench, LifeBuoy, LineChart, LogOut } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar() {
-  const navItems = [
-    { name: "Dashboard", path: "/", icon: LayoutDashboard },
-    { name: "Properties", path: "/properties", icon: Building2 },
-    { name: "Units & Tenants", path: "/tenants", icon: Users },
-    { name: "Payments", path: "/payments", icon: Receipt },
-    { name: "Maintenance", path: "/maintenance", icon: Wrench },
-    { name: "Support", path: "/support", icon: LifeBuoy },
-    { name: "Reports", path: "/reports", icon: LineChart },
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+  };
+
+  const role = user?.role || "tenant";
+  
+  const allNavItems = [
+    { name: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "owner", "tenant"] },
+    { name: "Properties", path: "/properties", icon: Building2, roles: ["admin", "owner"] },
+    { name: "Units & Tenants", path: "/tenants", icon: Users, roles: ["admin", "owner"] },
+    { name: "Payments", path: "/payments", icon: Receipt, roles: ["admin", "tenant"] },
+    { name: "Maintenance", path: "/maintenance", icon: Wrench, roles: ["admin", "owner", "tenant"] },
+    { name: "Support", path: "/support", icon: LifeBuoy, roles: ["admin", "tenant"] },
+    { name: "Reports", path: "/reports", icon: LineChart, roles: ["admin", "owner"] },
   ];
+
+  const navItems = allNavItems.filter(item => item.roles.includes(role));
 
   return (
     <div className="w-64 bg-[var(--color-beige-bg)] border-r border-[var(--color-taupe-border)] h-screen flex flex-col">
@@ -41,14 +59,23 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-[var(--color-taupe-border)]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#D6D3D1] flex items-center justify-center text-sm font-bold text-[var(--color-charcoal-txt)]">
-            JD
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#D6D3D1] flex items-center justify-center text-sm font-bold text-[var(--color-charcoal-txt)]">
+              {getInitials(user?.full_name)}
+            </div>
+            <div className="text-sm">
+              <p className="font-medium truncate max-w-[100px]">{user?.full_name || "User"}</p>
+              <p className="text-xs text-[var(--color-taupe-txt)] capitalize">{role}</p>
+            </div>
           </div>
-          <div className="text-sm">
-            <p className="font-medium">Jane Doe</p>
-            <p className="text-xs text-[var(--color-taupe-txt)]">System Admin</p>
-          </div>
+          <button 
+            onClick={handleLogout}
+            className="p-2 text-[var(--color-taupe-txt)] hover:text-rose-600 transition-colors"
+            title="Log out"
+          >
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
     </div>

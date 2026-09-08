@@ -12,3 +12,4 @@ class User(Base):
     full_name = Column(String(255))
     is_active = Column(Boolean(), default=True)
     is_superuser = Column(Boolean(), default=False)
+    role = Column(String(50), default="tenant")

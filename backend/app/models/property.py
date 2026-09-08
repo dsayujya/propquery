@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import Integer, String, func
+from sqlalchemy import Integer, String, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -21,6 +21,7 @@ class Property(Base):
     zip_code: Mapped[str] = mapped_column(String(20), nullable=False)
     property_type: Mapped[str] = mapped_column(String(50), nullable=False)
     year_built: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    owner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
@@ -29,6 +30,7 @@ class Property(Base):
     )
 
     # Relationships
+    owner = relationship("User")
     units = relationship("Unit", back_populates="property", cascade="all, delete-orphan")
     support_tickets = relationship("SupportTicket", back_populates="property")
 

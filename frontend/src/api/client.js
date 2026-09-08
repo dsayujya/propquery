@@ -20,6 +20,7 @@ export const api = {
   getOccupancyReport: () => apiClient.get("/reports/occupancy").then(res => res.data),
   getRentCollection: () => apiClient.get("/reports/rent-collection").then(res => res.data),
   getMaintenancePerformance: () => apiClient.get("/reports/maintenance-performance").then(res => res.data),
+  getTenantPayments: () => apiClient.get("/reports/tenant-payments").then(res => res.data),
   
   // Entities (basic)
   getProperties: () => apiClient.get("/properties/").then(res => res.data),
@@ -41,6 +42,7 @@ export const api = {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     }).then(res => res.data);
   },
+  signup: (data) => apiClient.post("/auth/signup", data).then(res => res.data),
   getMe: () => apiClient.get("/auth/me").then(res => res.data),
 };
 

@@ -6,6 +6,7 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     is_active: Optional[bool] = True
     is_superuser: bool = False
+    role: str = "tenant"
 
 class UserCreate(UserBase):
     password: str

@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 class ReportRepository:
     
     @staticmethod
-    def get_property_occupancy(db: Session) -> List[Dict[str, Any]]:
+    def get_property_occupancy(db: Session, owner_id: int = None) -> List[Dict[str, Any]]:
         """A. Property Occupancy Report"""
-        query = text("""
+        base_query = """
             SELECT 
                 p.name AS property_name,
                 COUNT(u.id) AS total_units,
@@ -21,16 +21,23 @@ class ReportRepository:
                 END AS occupancy_percentage
             FROM properties p
             LEFT JOIN units u ON p.id = u.property_id
-            GROUP BY p.id, p.name
-            ORDER BY p.name;
-        """)
-        result = db.execute(query).mappings().all()
+        """
+        if owner_id:
+            base_query += " WHERE p.owner_id = :owner_id"
+            
+        base_query += " GROUP BY p.id, p.name ORDER BY p.name;"
+        
+        query = text(base_query)
+        params = {"owner_id": owner_id} if owner_id else {}
+        result = db.execute(query, params).mappings().all()
         return [dict(row) for row in result]
 
     @staticmethod
-    def get_rent_collection(db: Session) -> List[Dict[str, Any]]:
+    def get_rent_collection(db: Session, owner_id: int = None) -> List[Dict[str, Any]]:
         """B. Rent Collection Report"""
-        query = text("""
+        where_clause = " WHERE p.owner_id = :owner_id" if owner_id else ""
+        
+        base_query = f"""
             WITH ExpectedRent AS (
                 SELECT 
                     p.id AS property_id,
@@ -40,6 +47,7 @@ class ReportRepository:
                 JOIN units u ON p.id = u.property_id
                 JOIN leases l ON u.id = l.unit_id
                 WHERE l.status = 'active'
+                {"AND p.owner_id = :owner_id" if owner_id else ""}
                 GROUP BY p.id, p.name
             ),
             CollectedRent AS (
@@ -53,6 +61,7 @@ class ReportRepository:
                 WHERE pay.status = 'completed'
                   AND EXTRACT(MONTH FROM pay.payment_date) = EXTRACT(MONTH FROM CURRENT_DATE)
                   AND EXTRACT(YEAR FROM pay.payment_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+                  {"AND p.owner_id = :owner_id" if owner_id else ""}
                 GROUP BY p.id
             )
             SELECT 
@@ -67,12 +76,14 @@ class ReportRepository:
             FROM ExpectedRent er
             LEFT JOIN CollectedRent cr ON er.property_id = cr.property_id
             ORDER BY er.property_name;
-        """)
-        result = db.execute(query).mappings().all()
+        """
+        query = text(base_query)
+        params = {"owner_id": owner_id} if owner_id else {}
+        result = db.execute(query, params).mappings().all()
         return [dict(row) for row in result]
 
     @staticmethod
-    def get_tenant_payment_history(db: Session, tenant_id: int = None) -> List[Dict[str, Any]]:
+    def get_tenant_payment_history(db: Session, tenant_id: int = None, user_id: int = None) -> List[Dict[str, Any]]:
         """C. Tenant Payment History"""
         base_query = """
             SELECT 
@@ -87,28 +98,32 @@ class ReportRepository:
             JOIN units u ON l.unit_id = u.id
             JOIN properties p ON u.property_id = p.id
             JOIN payments pay ON l.id = pay.lease_id
+            WHERE 1=1
         """
+        params = {}
         if tenant_id:
-            base_query += " WHERE t.id = :tenant_id"
+            base_query += " AND t.id = :tenant_id"
+            params["tenant_id"] = tenant_id
+        if user_id:
+            base_query += " AND t.user_id = :user_id"
+            params["user_id"] = user_id
             
         base_query += " ORDER BY pay.payment_date DESC"
         
         query = text(base_query)
-        params = {"tenant_id": tenant_id} if tenant_id else {}
         result = db.execute(query, params).mappings().all()
         return [dict(row) for row in result]
 
     @staticmethod
-    def get_outstanding_payments(db: Session) -> List[Dict[str, Any]]:
+    def get_outstanding_payments(db: Session, owner_id: int = None) -> List[Dict[str, Any]]:
         """D. Outstanding Payments Report"""
-        query = text("""
+        base_query = """
             SELECT 
                 t.first_name || ' ' || t.last_name AS tenant_name,
                 p.name AS property_name,
                 u.unit_number,
                 l.monthly_rent,
                 COALESCE(SUM(CASE WHEN pay.status = 'completed' THEN pay.amount ELSE 0 END), 0) AS total_paid,
-                -- A simplistic outstanding logic for demo: assume outstanding if payment is pending/failed
                 COALESCE(SUM(CASE WHEN pay.status IN ('pending', 'failed') THEN pay.amount ELSE 0 END), 0) AS outstanding_balance
             FROM leases l
             JOIN tenants t ON l.tenant_id = t.id
@@ -116,17 +131,24 @@ class ReportRepository:
             JOIN properties p ON u.property_id = p.id
             LEFT JOIN payments pay ON l.id = pay.lease_id
             WHERE l.status = 'active'
+        """
+        if owner_id:
+            base_query += " AND p.owner_id = :owner_id"
+            
+        base_query += """
             GROUP BY t.id, t.first_name, t.last_name, p.name, u.unit_number, l.monthly_rent
             HAVING COALESCE(SUM(CASE WHEN pay.status IN ('pending', 'failed') THEN pay.amount ELSE 0 END), 0) > 0
             ORDER BY outstanding_balance DESC;
-        """)
-        result = db.execute(query).mappings().all()
+        """
+        query = text(base_query)
+        params = {"owner_id": owner_id} if owner_id else {}
+        result = db.execute(query, params).mappings().all()
         return [dict(row) for row in result]
 
     @staticmethod
-    def get_maintenance_performance(db: Session) -> List[Dict[str, Any]]:
+    def get_maintenance_performance(db: Session, owner_id: int = None, tenant_user_id: int = None) -> List[Dict[str, Any]]:
         """E. Maintenance Performance Report"""
-        query = text("""
+        base_query = """
             SELECT 
                 p.name AS property_name,
                 COUNT(mr.id) AS total_requests,
@@ -142,16 +164,49 @@ class ReportRepository:
             FROM properties p
             LEFT JOIN units u ON p.id = u.property_id
             LEFT JOIN maintenance_requests mr ON u.id = mr.unit_id
-            GROUP BY p.id, p.name
-            ORDER BY p.name;
-        """)
-        result = db.execute(query).mappings().all()
+        """
+        if tenant_user_id:
+            # Join through lease and tenant to restrict to tenant's unit
+            base_query = """
+                SELECT 
+                    p.name AS property_name,
+                    COUNT(mr.id) AS total_requests,
+                    SUM(CASE WHEN mr.status IN ('open', 'in_progress') THEN 1 ELSE 0 END) AS open_requests,
+                    SUM(CASE WHEN mr.status IN ('resolved', 'closed') THEN 1 ELSE 0 END) AS resolved_requests,
+                    ROUND(AVG(
+                        CASE 
+                            WHEN mr.status IN ('resolved', 'closed') AND mr.resolved_date IS NOT NULL 
+                            THEN mr.resolved_date - mr.created_date
+                            ELSE NULL 
+                        END
+                    ), 1) AS avg_resolution_days
+                FROM maintenance_requests mr
+                JOIN units u ON mr.unit_id = u.id
+                JOIN properties p ON u.property_id = p.id
+                JOIN leases l ON u.id = l.unit_id
+                JOIN tenants t ON l.tenant_id = t.id
+                WHERE t.user_id = :tenant_user_id AND l.status = 'active'
+            """
+            
+        elif owner_id:
+            base_query += " WHERE p.owner_id = :owner_id"
+            
+        base_query += " GROUP BY p.id, p.name ORDER BY p.name;"
+        query = text(base_query)
+        
+        params = {}
+        if tenant_user_id:
+            params["tenant_user_id"] = tenant_user_id
+        elif owner_id:
+            params["owner_id"] = owner_id
+            
+        result = db.execute(query, params).mappings().all()
         return [dict(row) for row in result]
 
     @staticmethod
-    def get_property_financial_summary(db: Session) -> List[Dict[str, Any]]:
+    def get_property_financial_summary(db: Session, owner_id: int = None) -> List[Dict[str, Any]]:
         """F. Property Financial Summary"""
-        query = text("""
+        base_query = """
             SELECT 
                 p.name AS property_name,
                 COALESCE(SUM(pay.amount), 0) AS total_revenue,
@@ -164,26 +219,40 @@ class ReportRepository:
             LEFT JOIN units u ON p.id = u.property_id
             LEFT JOIN leases l ON u.id = l.unit_id
             LEFT JOIN payments pay ON l.id = pay.lease_id AND pay.status = 'completed'
-            GROUP BY p.id, p.name
-            ORDER BY total_revenue DESC;
-        """)
-        result = db.execute(query).mappings().all()
+        """
+        if owner_id:
+            base_query += " WHERE p.owner_id = :owner_id"
+            
+        base_query += " GROUP BY p.id, p.name ORDER BY total_revenue DESC;"
+        query = text(base_query)
+        params = {"owner_id": owner_id} if owner_id else {}
+        result = db.execute(query, params).mappings().all()
         return [dict(row) for row in result]
 
     @staticmethod
-    def get_monthly_revenue(db: Session) -> List[Dict[str, Any]]:
+    def get_monthly_revenue(db: Session, owner_id: int = None) -> List[Dict[str, Any]]:
         """G. Monthly Revenue Report"""
-        query = text("""
+        base_query = """
             SELECT 
-                TO_CHAR(payment_date, 'YYYY-MM') AS revenue_month,
-                SUM(amount) AS total_revenue,
-                COUNT(id) AS payment_count
-            FROM payments
-            WHERE status = 'completed'
-            GROUP BY TO_CHAR(payment_date, 'YYYY-MM')
-            ORDER BY revenue_month DESC;
-        """)
-        result = db.execute(query).mappings().all()
+                TO_CHAR(pay.payment_date, 'YYYY-MM') AS revenue_month,
+                SUM(pay.amount) AS total_revenue,
+                COUNT(pay.id) AS payment_count
+            FROM payments pay
+        """
+        if owner_id:
+            base_query += """
+                JOIN leases l ON pay.lease_id = l.id
+                JOIN units u ON l.unit_id = u.id
+                JOIN properties p ON u.property_id = p.id
+                WHERE pay.status = 'completed' AND p.owner_id = :owner_id
+            """
+        else:
+             base_query += " WHERE pay.status = 'completed'"
+             
+        base_query += " GROUP BY TO_CHAR(pay.payment_date, 'YYYY-MM') ORDER BY revenue_month DESC;"
+        query = text(base_query)
+        params = {"owner_id": owner_id} if owner_id else {}
+        result = db.execute(query, params).mappings().all()
         return [dict(row) for row in result]
 
 report_repository = ReportRepository()

@@ -7,6 +7,7 @@ import Properties from "./pages/Properties";
 import Tenants from "./pages/Tenants";
 import Support from "./pages/Support";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<MainLayout />}>
