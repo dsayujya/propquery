@@ -38,6 +38,8 @@ The frontend is purposefully designed using a restrained "beige/cream" enterpris
 
 ## 📂 Architecture
 
+For an in-depth breakdown, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 The backend strictly adheres to Clean Architecture principles, ensuring separation of concerns:
 
 ```text
